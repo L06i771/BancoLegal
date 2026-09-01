@@ -1,0 +1,50 @@
+@startuml
+
+class Usuario {
+    +id : int
+    +nome : string
+    +email : string
+    +senha_hash : string
+    +created_at : datetime
+}
+
+class Categoria {
+    +id : int
+    +nome : string
+    +usuario_id : int [0..1]
+    +is_global : boolean
+}
+
+class Despesa {
+    +id : int
+    +descricao : string
+    +valor : decimal(10,2)
+    +data : date
+    +usuario_id : int
+    +categoria_id : int
+}
+
+class Receita {
+    +id : int
+    +descricao : string
+    +valor : decimal(10,2)
+    +data : date
+    +usuario_id : int
+}
+
+class MetaFinanceira {
+    +id : int
+    +nome : string
+    +valor_desejado : decimal(10,2)
+    +prazo : date [0..1]
+    +usuario_id : int
+    +calcularProgresso() : decimal
+}
+
+Usuario "1" -- "0..*" Despesa
+Usuario "1" -- "0..*" Receita
+Usuario "1" -- "0..*" MetaFinanceira
+Usuario "0..1" -- "0..*" Categoria
+Categoria "1" -- "0..*" Despesa
+
+@enduml
