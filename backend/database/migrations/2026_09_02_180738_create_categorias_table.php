@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('categorias', function (Blueprint $table) {
+            $table->id();
+            $table->string('nome', 100);
+
+            $table->foreignId('usuario_id')
+                ->nullable()
+                ->constrained('usuarios')
+                ->onDelete('cascade');
+
+            $table->boolean('is_global')->default(false);
+
+            $table->unique(['usuario_id', 'nome']);
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('categorias');
+    }
+};
