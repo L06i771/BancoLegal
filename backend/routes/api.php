@@ -5,8 +5,11 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\DespesaController;
 use App\Http\Controllers\MetaFinanceiraController;
 use App\Http\Controllers\ReceitaController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/usuarios', [UsuarioController::class, 'store']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
