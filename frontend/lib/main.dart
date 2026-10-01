@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+
+import 'pages/dashboard_page.dart';
 import 'pages/login_page.dart';
+import 'pages/metas_page.dart';
+import 'pages/movimentacoes_page.dart';
+import 'pages/relatorios_page.dart';
 
 void main() {
   runApp(const BancoLegalApp());
@@ -22,6 +27,12 @@ class BancoLegalApp extends StatelessWidget {
         ),
       ),
       home: const LoginPage(),
+      routes: {
+        '/dashboard': (context) => const DashboardPage(),
+        '/metas': (context) => const MetasPage(),
+        '/movimentacoes': (context) => const MovimentacoesPage(),
+        '/relatorios': (context) => const RelatoriosPage(),
+      },
     );
   }
 }

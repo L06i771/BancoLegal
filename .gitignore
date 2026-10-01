@@ -1,0 +1,22 @@
+# Laravel
+backend/.env
+backend/.env.*
+backend/vendor/
+backend/node_modules/
+
+# Arquivos de implantação/backups locais
+backend-producao/
+backend-app.zip
+backend-producao.zip
+config-routes.zip
+bancolegal_backup.sql
+
+# Flutter
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+
+# Arquivos locais/temporários
+frontend/flutter_01.png

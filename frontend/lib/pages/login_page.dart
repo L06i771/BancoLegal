@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../services/api_service.dart';
+import 'cadastro_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,7 +17,12 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController senhaController = TextEditingController();
 
+  final ApiService apiService = ApiService();
+
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
+
   bool senhaVisivel = false;
+  bool carregando = false;
 
   @override
   void dispose() {
@@ -22,18 +31,70 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void entrar() {
+  Future<void> entrar() async {
     if (!formKey.currentState!.validate()) {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Login preparado! A API será conectada depois.',
+    setState(() {
+      carregando = true;
+    });
+
+    try {
+      final data = await apiService.login(
+        email: emailController.text.trim(),
+        senha: senhaController.text,
+      );
+
+      final token = data['token'];
+
+      if (token == null || token.toString().isEmpty) {
+        throw Exception('A API não retornou um token.');
+      }
+
+      await storage.write(
+        key: 'auth_token',
+        value: token.toString(),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Login realizado com sucesso! Token salvo.',
+          ),
         ),
-      ),
-    );
+      );
+
+      debugPrint('TOKEN RECEBIDO E SALVO COM SUCESSO.');
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/dashboard',
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erro ao fazer login: ${e.toString().replaceFirst('Exception: ', '')}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          carregando = false;
+        });
+      }
+    }
   }
 
   String? validarEmail(String? value) {
@@ -182,6 +243,7 @@ class _LoginPageState extends State<LoginPage> {
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             validator: validarEmail,
+                            enabled: !carregando,
                             decoration: InputDecoration(
                               hintText: 'seuemail@exemplo.com',
                               prefixIcon: const Icon(
@@ -238,6 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                             obscureText: !senhaVisivel,
                             textInputAction: TextInputAction.done,
                             validator: validarSenha,
+                            enabled: !carregando,
                             onFieldSubmitted: (_) => entrar(),
                             decoration: InputDecoration(
                               hintText: 'Digite sua senha',
@@ -245,11 +308,13 @@ class _LoginPageState extends State<LoginPage> {
                                 Icons.lock_outline_rounded,
                               ),
                               suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    senhaVisivel = !senhaVisivel;
-                                  });
-                                },
+                                onPressed: carregando
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          senhaVisivel = !senhaVisivel;
+                                        });
+                                      },
                                 icon: Icon(
                                   senhaVisivel
                                       ? Icons.visibility_off_outlined
@@ -294,15 +359,18 @@ class _LoginPageState extends State<LoginPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Recuperação de senha será adicionada depois.',
-                                    ),
-                                  ),
-                                );
-                              },
+                              onPressed: carregando
+                                  ? null
+                                  : () {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Recuperação de senha será adicionada depois.',
+                                          ),
+                                        ),
+                                      );
+                                    },
                               child: const Text(
                                 'Esqueci minha senha',
                                 style: TextStyle(
@@ -318,23 +386,35 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: entrar,
+                              onPressed: carregando ? null : entrar,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1B7F5C),
+                                backgroundColor:
+                                    const Color(0xFF1B7F5C),
                                 foregroundColor: Colors.white,
+                                disabledBackgroundColor:
+                                    const Color(0xFF9DB9AD),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text(
-                                'ENTRAR',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              child: carregando
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'ENTRAR',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
                             ),
                           ),
 
@@ -380,15 +460,17 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               TextButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Tela de cadastro será criada depois.',
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onPressed: carregando
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const CadastroPage(),
+                                          ),
+                                        );
+                                      },
                                 child: const Text(
                                   'Cadastre-se',
                                   style: TextStyle(
